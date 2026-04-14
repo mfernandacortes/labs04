@@ -2,7 +2,7 @@
 -- PROYECTO: Sistema de Gestión de Biblioteca / Tickets
 -- DESCRIPCIÓN: Estructura de datos con automatización mediante Triggers y Procedures.
 -- FECHA ORIGINAL: 2019 | ACTUALIZADO: 2026
--- AUTOR: [Tu Nombre]
+-- AUTOR: María Fernanda Cortés
 -- -----------------------------------------------------------------------------
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
