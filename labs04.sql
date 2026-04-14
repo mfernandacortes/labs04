@@ -1,204 +1,120 @@
+-- -----------------------------------------------------------------------------
+-- PROYECTO: Sistema de Gestión de Biblioteca / Tickets
+-- DESCRIPCIÓN: Estructura de datos con automatización mediante Triggers y Procedures.
+-- FECHA ORIGINAL: 2019 | ACTUALIZADO: 2026
+-- AUTOR: [Tu Nombre]
+-- -----------------------------------------------------------------------------
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
 
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
-
---
--- Base de datos: `labs04`
---
-
+-- --------------------------------------------------------
+-- 1. PROCEDIMIENTOS ALMACENADOS (Stored Procedures)
+-- --------------------------------------------------------
 DELIMITER $$
---
--- Procedimientos
---
-CREATE DEFINER=`root`@`localhost` PROCEDURE `insertar_autor` (`NomyAp` VARCHAR(200))  INSERT INTO `autores`(`IdAutor`, `ApellidoyNomAutor`) VALUES ('', NomyAp)$$
+
+-- Procedimiento para estandarizar la inserción de autores
+-- Ventaja: Encapsula la lógica de inserción y protege el ID autoincremental.
+CREATE PROCEDURE `insertar_autor` (IN NomyAp VARCHAR(200))
+BEGIN
+    INSERT INTO `autores`(`ApellidoyNomAutor`) VALUES (NomyAp);
+END$$
 
 DELIMITER ;
 
 -- --------------------------------------------------------
+-- 2. ESTRUCTURA DE TABLAS
+-- --------------------------------------------------------
 
---
--- Estructura de tabla para la tabla `autores`
---
-
+-- Tabla de Autores
 CREATE TABLE `autores` (
-  `IdAutor` int(11) NOT NULL,
-  `ApellidoyNomAutor` varchar(200) COLLATE utf8_spanish_ci NOT NULL
+  `IdAutor` int(11) NOT NULL AUTO_INCREMENT,
+  `ApellidoyNomAutor` varchar(200) COLLATE utf8_spanish_ci NOT NULL,
+  PRIMARY KEY (`IdAutor`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish_ci;
 
---
--- Volcado de datos para la tabla `autores`
---
-
-INSERT INTO `autores` (`IdAutor`, `ApellidoyNomAutor`) VALUES
-(1, 'Cortazar Julio'),
-(2, 'Borges Jorge Luis'),
-(3, 'García Marquez Gabriel');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `generos`
---
-
+-- Tabla de Géneros
 CREATE TABLE `generos` (
-  `IdGenero` int(11) NOT NULL,
-  `DetalleGenero` varchar(200) COLLATE utf8_spanish_ci NOT NULL
+  `IdGenero` int(11) NOT NULL AUTO_INCREMENT,
+  `DetalleGenero` varchar(200) COLLATE utf8_spanish_ci NOT NULL,
+  PRIMARY KEY (`IdGenero`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish_ci;
 
---
--- Volcado de datos para la tabla `generos`
---
-
-INSERT INTO `generos` (`IdGenero`, `DetalleGenero`) VALUES
-(1, 'Poesía'),
-(2, 'Novelas');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `libros`
---
-
+-- Tabla de Libros (Entidad Principal)
 CREATE TABLE `libros` (
-  `IdLibro` int(11) NOT NULL,
+  `IdLibro` int(11) NOT NULL AUTO_INCREMENT,
   `AutorId` int(11) NOT NULL,
   `GeneroId` int(11) NOT NULL,
   `Titulo` varchar(200) COLLATE utf8_spanish_ci NOT NULL,
-  `Disponible` tinyint(1) NOT NULL,
-  `fecha_prestamo` date DEFAULT NULL
+  `Disponible` tinyint(1) NOT NULL DEFAULT 1,
+  `fecha_prestamo` date DEFAULT NULL,
+  PRIMARY KEY (`IdLibro`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish_ci;
 
---
--- Volcado de datos para la tabla `libros`
---
-
-INSERT INTO `libros` (`IdLibro`, `AutorId`, `GeneroId`, `Titulo`, `Disponible`, `fecha_prestamo`) VALUES
-(1, 1, 2, 'Rayuela', 1, NULL),
-(2, 3, 2, 'Cien años de soledad', 0, NULL),
-(3, 2, 1, 'El hacedor', 0, '2019-08-14');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `prestamos`
---
-
-CREATE TABLE `prestamos` (
-  `IdPrestamo` int(11) NOT NULL,
-  `SocioDni` int(11) NOT NULL,
-  `LibroId` int(11) NOT NULL,
-  `FechaPrestamo` date NOT NULL,
-  `FechaDevolucion` date DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish_ci;
-
---
--- Volcado de datos para la tabla `prestamos`
---
-
-INSERT INTO `prestamos` (`IdPrestamo`, `SocioDni`, `LibroId`, `FechaPrestamo`, `FechaDevolucion`) VALUES
-(1, 11111111, 2, '2019-08-10', NULL),
-(2, 11111111, 3, '2019-08-24', NULL),
-(12, 11111111, 3, '2019-08-14', NULL);
-
---
--- Disparadores `prestamos`
---
-DELIMITER $$
-CREATE TRIGGER `modif_libro` AFTER INSERT ON `prestamos` FOR EACH ROW update libros set Disponible = 0, fecha_prestamo=new.FechaPrestamo where IdLibro=new.LibroId
-$$
-DELIMITER ;
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `socios`
---
-
+-- Tabla de Socios
 CREATE TABLE `socios` (
   `DniSocio` int(11) NOT NULL,
   `NomyApSocio` varchar(200) COLLATE utf8_spanish_ci NOT NULL,
-  `Telefono` int(20) NOT NULL
+  `Telefono` varchar(20) NOT NULL, -- Cambiado a varchar para compatibilidad con prefijos
+  PRIMARY KEY (`DniSocio`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish_ci;
 
---
--- Volcado de datos para la tabla `socios`
---
+-- Tabla de Préstamos (Relacional)
+CREATE TABLE `prestamos` (
+  `IdPrestamo` int(11) NOT NULL AUTO_INCREMENT,
+  `SocioDni` int(11) NOT NULL,
+  `LibroId` int(11) NOT NULL,
+  `FechaPrestamo` date NOT NULL,
+  `FechaDevolucion` date DEFAULT NULL,
+  PRIMARY KEY (`IdPrestamo`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish_ci;
+
+-- --------------------------------------------------------
+-- 3. AUTOMATIZACIÓN MEDIANTE DISPARADORES (Triggers)
+-- --------------------------------------------------------
+DELIMITER $$
+
+-- Trigger: modif_libro
+-- Objetivo: Garantizar la integridad de los datos. 
+-- Al registrar un préstamo, automáticamente se marca el libro como NO disponible 
+-- y se actualiza su fecha de salida sin necesidad de código extra en el backend.
+CREATE TRIGGER `modif_libro` 
+AFTER INSERT ON `prestamos` 
+FOR EACH ROW 
+BEGIN
+    UPDATE libros 
+    SET Disponible = 0, 
+        fecha_prestamo = NEW.FechaPrestamo 
+    WHERE IdLibro = NEW.LibroId;
+END$$
+
+DELIMITER ;
+
+-- --------------------------------------------------------
+-- 4. VOLCADO DE DATOS (Seeders)
+-- --------------------------------------------------------
+
+INSERT INTO `autores` (`ApellidoyNomAutor`) VALUES
+('Cortazar Julio'),
+('Borges Jorge Luis'),
+('García Marquez Gabriel');
+
+INSERT INTO `generos` (`DetalleGenero`) VALUES
+('Poesía'),
+('Novelas');
 
 INSERT INTO `socios` (`DniSocio`, `NomyApSocio`, `Telefono`) VALUES
-(11111111, 'Arana Facundo', 34156565),
-(54454556, 'Pitt Brad', 341589889);
+(11111111, 'Arana Facundo', '34156565'),
+(54454556, 'Pitt Brad', '341589889');
 
---
--- Índices para tablas volcadas
---
+INSERT INTO `libros` (`AutorId`, `GeneroId`, `Titulo`, `Disponible`) VALUES
+(1, 2, 'Rayuela', 1),
+(3, 2, 'Cien años de soledad', 1),
+(2, 1, 'El hacedor', 1);
 
---
--- Indices de la tabla `autores`
---
-ALTER TABLE `autores`
-  ADD PRIMARY KEY (`IdAutor`);
-
---
--- Indices de la tabla `generos`
---
-ALTER TABLE `generos`
-  ADD PRIMARY KEY (`IdGenero`);
-
---
--- Indices de la tabla `libros`
---
-ALTER TABLE `libros`
-  ADD PRIMARY KEY (`IdLibro`);
-
---
--- Indices de la tabla `prestamos`
---
-ALTER TABLE `prestamos`
-  ADD PRIMARY KEY (`IdPrestamo`);
-
---
--- Indices de la tabla `socios`
---
-ALTER TABLE `socios`
-  ADD PRIMARY KEY (`DniSocio`);
-
---
--- AUTO_INCREMENT de las tablas volcadas
---
-
---
--- AUTO_INCREMENT de la tabla `autores`
---
-ALTER TABLE `autores`
-  MODIFY `IdAutor` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT de la tabla `generos`
---
-ALTER TABLE `generos`
-  MODIFY `IdGenero` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT de la tabla `libros`
---
-ALTER TABLE `libros`
-  MODIFY `IdLibro` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT de la tabla `prestamos`
---
-ALTER TABLE `prestamos`
-  MODIFY `IdPrestamo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+-- --------------------------------------------------------
+-- 5. FINALIZACIÓN
+-- --------------------------------------------------------
 COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
